@@ -1,0 +1,92 @@
+<div class="page">
+  <div class="heading-row">
+    <div>
+      <div class="eyebrow">ANALYTICS & COMPLIANCE</div>
+      <h1>Risk & Decision Reports<span class="accent-dot">.</span></h1>
+      <p class="subtitle">Aggregate metrics across departments for Swisscom executive risk reviews.</p>
+    </div>
+    <button type="button" class="btn-primary" (click)="exportJson()">
+      Export Risk Dataset (JSON)
+    </button>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="card metric-card">
+      <h4>Severity Distribution</h4>
+      <div class="stat-bars">
+        <div class="bar-row">
+          <span class="label">Critical</span>
+          <div class="bar-container">
+            <div class="bar critical" [style.width.%]="severityCounts().critical * 15 + 10"></div>
+          </div>
+          <span class="val">{{ severityCounts().critical }}</span>
+        </div>
+        <div class="bar-row">
+          <span class="label">High</span>
+          <div class="bar-container">
+            <div class="bar high" [style.width.%]="severityCounts().high * 15 + 10"></div>
+          </div>
+          <span class="val">{{ severityCounts().high }}</span>
+        </div>
+        <div class="bar-row">
+          <span class="label">Medium</span>
+          <div class="bar-container">
+            <div class="bar medium" [style.width.%]="severityCounts().medium * 15 + 10"></div>
+          </div>
+          <span class="val">{{ severityCounts().medium }}</span>
+        </div>
+        <div class="bar-row">
+          <span class="label">Low</span>
+          <div class="bar-container">
+            <div class="bar low" [style.width.%]="severityCounts().low * 15 + 10"></div>
+          </div>
+          <span class="val">{{ severityCounts().low }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card metric-card">
+      <h4>Departmental Coverage</h4>
+      <div class="area-list">
+        @for (item of areaCounts(); track item.area) {
+          <div class="area-item">
+            <span class="area-name">{{ item.area }}</span>
+            <span class="area-pill">{{ item.count }} registered</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h3>All Monitored Risks</h3>
+      <a routerLink="/dashboard" class="link-btn">Open Interactive Register →</a>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>TITLE</th>
+          <th>AREA</th>
+          <th>SEVERITY</th>
+          <th>STATUS</th>
+          <th>OWNER</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (risk of riskService.risks(); track risk.id) {
+          <tr>
+            <td>#{{ risk.id }}</td>
+            <td><strong>{{ risk.title }}</strong></td>
+            <td>{{ risk.area }}</td>
+            <td><app-severity-badge [severity]="risk.severity"></app-severity-badge></td>
+            <td><app-status-badge [status]="risk.status"></app-status-badge></td>
+            <td>{{ risk.owner }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

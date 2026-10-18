@@ -1,0 +1,218 @@
+<div class="page">
+  <div class="back-nav">
+    <a routerLink="/dashboard" class="back-link">← Back to dashboard</a>
+  </div>
+
+  @if (risk(); as r) {
+    <div class="detail-header">
+      <div>
+        <div class="meta-tag">#{{ r.id }} · {{ r.area }}</div>
+        <h1>{{ r.title }}</h1>
+        <div class="badge-row">
+          <app-severity-badge [severity]="r.severity"></app-severity-badge>
+          <app-status-badge [status]="r.status"></app-status-badge>
+          <span class="owner-tag">Owner: <strong>{{ r.owner }}</strong></span>
+          <span class="date-tag">Created: {{ r.createdAt }}</span>
+        </div>
+      </div>
+      <div class="action-bar">
+        @if (canEdit()) {
+          <button type="button" class="btn-action" (click)="isEditing.set(!isEditing())">
+            {{ isEditing() ? 'Cancel Edit' : 'Edit Risk' }}
+          </button>
+          <button type="button" class="btn-primary" (click)="showDecisionModal.set(true)">
+            Record Decision
+          </button>
+        }
+        @if (canDelete()) {
+          <button type="button" class="btn-danger" (click)="showDeleteConfirm.set(true)">
+            Delete
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Edit Form -->
+    @if (isEditing()) {
+      <div class="card edit-card">
+        <h3>Edit Risk #{{ r.id }}</h3>
+        <form (ngSubmit)="saveEdit()">
+          <label>Risk title
+            <input [(ngModel)]="editForm.title" name="title" required />
+          </label>
+          <label>Description / Context
+            <textarea [(ngModel)]="editForm.description" name="description" rows="3"></textarea>
+          </label>
+          <div class="form-row">
+            <label>Business area
+              <select [(ngModel)]="editForm.area" name="area">
+                <option>Information Security</option>
+                <option>Operations</option>
+                <option>Compliance</option>
+                <option>Vendor Management</option>
+              </select>
+            </label>
+            <label>Severity
+              <select [(ngModel)]="editForm.severity" name="severity">
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="CRITICAL">Critical</option>
+              </select>
+            </label>
+            <label>Risk owner
+              <input [(ngModel)]="editForm.owner" name="owner" required />
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-action" (click)="isEditing.set(false)">Cancel</button>
+            <button type="submit" class="btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <div class="grid-layout">
+      <!-- Main Column: Details, Description, Decisions -->
+      <div class="main-column">
+        <div class="card">
+          <h3>Context & Business Impact</h3>
+          <p class="description-text">
+            {{ r.description || 'No detailed description provided yet. Reviewers should assess system boundaries and business impact.' }}
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-title-row">
+            <h3>Human Expert Decisions</h3>
+            <span class="count">{{ decisions().length }} recorded</span>
+          </div>
+
+          @for (d of decisions(); track d.id) {
+            <div class="decision-entry">
+              <div class="decision-head">
+                <span class="decision-badge" [class]="d.decision.toLowerCase()">{{ d.decision }}</span>
+                <strong>{{ d.reviewer }}</strong>
+                <span class="timestamp">{{ d.decidedAt | date:'medium' }}</span>
+              </div>
+              <p class="justification">"{{ d.justification }}"</p>
+              <div class="evidence">
+                <small>Evidence: {{ d.evidenceReviewed }} · Confidence: {{ d.confidenceLevel }}</small>
+              </div>
+            </div>
+          } @empty {
+            <div class="empty-state">No formal decisions recorded yet. An authorized reviewer can submit a decision.</div>
+          }
+        </div>
+
+        <!-- Audit Trail -->
+        <div class="card">
+          <h3>Audit History</h3>
+          <div class="audit-list">
+            @for (a of auditTrail(); track a.id) {
+              <div class="audit-item">
+                <span class="bullet">●</span>
+                <span class="actor">{{ a.actor }}</span>
+                <span class="action">{{ a.action }}</span>
+                <span class="details">{{ a.details }}</span>
+                <span class="timestamp">{{ a.timestamp | date:'short' }}</span>
+              </div>
+            } @empty {
+              <div class="empty-state">Audit entries logged automatically on decision review.</div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: AI Assistant Review -->
+      <div class="side-column">
+        <div class="card ai-card">
+          <div class="ai-badge">✦ RISKALIGN AI ASSISTANT</div>
+          <h4>Decision Evidence Package</h4>
+          <p class="ai-desc">Assists the human reviewer by evaluating completeness and testing against Swisscom risk guidelines.</p>
+
+          <button type="button" class="btn-ai" (click)="runAiAssistant()">
+            Run AI Assessment
+          </button>
+
+          @if (aiAnalysis(); as ai) {
+            <div class="ai-results">
+              <div class="ai-score">
+                <span>Completeness Score</span>
+                <strong>{{ ai.completenessScore }}%</strong>
+              </div>
+              <div class="ai-rec">
+                <span>Suggested Severity:</span>
+                <app-severity-badge [severity]="ai.suggestion"></app-severity-badge>
+              </div>
+              <div class="rules-box">
+                <div class="rules-label">Evaluated Guidelines:</div>
+                @for (rule of ai.rules; track rule) {
+                  <div class="rule-line">{{ rule }}</div>
+                }
+              </div>
+              <div class="disclaimer">
+                ⚠️ {{ ai.note }}
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="empty-state">Loading risk details...</div>
+  }
+</div>
+
+<!-- Decision Modal -->
+@if (showDecisionModal()) {
+  <div class="modal-backdrop" (click)="showDecisionModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Record Review Decision</h3>
+      <p class="modal-sub">Human-controlled sign-off. Provide written justification for compliance.</p>
+
+      <form (ngSubmit)="submitDecision()">
+        <label>Final Decision
+          <select [(ngModel)]="decisionForm.decision" name="decision">
+            <option value="APPROVED">Approve (Accept Risk)</option>
+            <option value="REJECTED">Reject (Action Required)</option>
+            <option value="NEEDS_INFO">Needs Info (Clarify details)</option>
+            <option value="DEFERRED">Deferred (Postpone review)</option>
+          </select>
+        </label>
+
+        <label>Written Justification (Mandatory, min 20 chars)
+          <textarea [(ngModel)]="decisionForm.justification" name="justification" rows="4" required placeholder="Explain why this decision is justified based on the evidence..."></textarea>
+        </label>
+
+        <div class="modal-two">
+          <label>Reviewer Confidence
+            <select [(ngModel)]="decisionForm.confidenceLevel" name="confidence">
+              <option value="HIGH">High confidence</option>
+              <option value="MEDIUM">Medium confidence</option>
+              <option value="LOW">Low confidence</option>
+            </select>
+          </label>
+          <label>Evidence Reference
+            <input [(ngModel)]="decisionForm.evidenceReviewed" name="evidence" placeholder="e.g. System audit log, CISO approval" />
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-action" (click)="showDecisionModal.set(false)">Cancel</button>
+          <button type="submit" class="btn-primary">Sign & Record Decision</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- Delete Confirm Dialog -->
+@if (showDeleteConfirm()) {
+  <app-confirm-dialog
+    title="Delete Risk"
+    [message]="'Are you sure you want to delete Risk #' + riskId() + '? This action is recorded in the audit log.'"
+    (confirm)="deleteRisk(); showDeleteConfirm.set(false)"
+    (cancel)="showDeleteConfirm.set(false)">
+  </app-confirm-dialog>
+}

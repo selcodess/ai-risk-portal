@@ -1,0 +1,74 @@
+name: CI/CD Pipeline - AI RiskPilot Enterprise
+
+on:
+  push:
+    branches: [ main, master, feature/** ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  frontend-angular:
+    name: Angular Microfrontend Shell & Features
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Frontend Dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Run Angular Tests (Vitest)
+        run: npm test -- --no-watch
+
+      - name: Production Build
+        run: npm run build
+
+  backend-risk-service:
+    name: Spring Boot - Risk Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Grant Execute Permission to Maven Wrapper
+        working-directory: backend/risk-service
+        run: chmod +x mvnw
+
+      - name: Test & Package Risk Service
+        working-directory: backend/risk-service
+        run: ./mvnw clean test
+
+  backend-decision-service:
+    name: Spring Boot - Decision Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Grant Execute Permission to Maven Wrapper
+        working-directory: backend/decision-service
+        run: chmod +x mvnw
+
+      - name: Test & Package Decision Service
+        working-directory: backend/decision-service
+        run: ./mvnw clean test

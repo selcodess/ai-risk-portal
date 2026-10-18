@@ -1,0 +1,64 @@
+@if (authService.isAuthenticated()) {
+  <div class="shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">◆</span>
+        <span>Risk<span class="brand-light">Pilot</span><small>SWISSCOM PORTAL</small></span>
+      </div>
+      <div class="workspace-label">ENTERPRISE APP</div>
+      <nav class="navigation" aria-label="Main navigation">
+        <a class="nav-item" routerLink="/dashboard" routerLinkActive="active">
+          <span>▦</span> Overview
+        </a>
+        <a class="nav-item" routerLink="/dashboard" fragment="risk-register" routerLinkActive="active">
+          <span>▤</span> Risk Register <b>{{ riskService.total() }}</b>
+        </a>
+        <a class="nav-item" routerLink="/reports" routerLinkActive="active">
+          <span>✦</span> Compliance & Reports
+        </a>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="workspace-card">
+          <span class="green-dot"></span>
+          <strong>Production-Ready Shell</strong>
+          <p>
+            @if (riskService.isConnectedToBackend()) {
+              Connected to Spring Boot Microservices (H2 DB)
+            } @else {
+              Offline Demo Mode (LocalStorage Sync)
+            }
+          </p>
+        </div>
+
+        <div class="profile">
+          <span class="avatar">{{ authService.currentUser()?.role?.charAt(0) || 'U' }}</span>
+          <div class="profile-meta">
+            <strong>{{ authService.currentUser()?.displayName || 'Active User' }}</strong>
+            <small>{{ authService.currentUser()?.role || 'VIEWER' }} Role</small>
+          </div>
+          <button type="button" class="btn-logout" (click)="logout()" title="Sign out">⎋</button>
+        </div>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <span>Swisscom <span class="slash">/</span> <strong>AI RiskPilot</strong></span>
+        <span class="top-status">
+          @if (riskService.isConnectedToBackend()) {
+            <span class="green-dot"></span> Spring Boot 3 Microservices Live
+          } @else {
+            <span class="amber-dot"></span> Local Offline Mode
+          }
+        </span>
+      </header>
+
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+} @else {
+  <router-outlet></router-outlet>
+}
+
+<app-toast></app-toast>

@@ -1,0 +1,165 @@
+#!/bin/sh
+# ----------------------------------------------------------------------------
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#    https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+# ----------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------
+# Maven Start Up Batch script
+#
+# Required ENV vars:
+# ------------------
+#   JAVA_HOME - location of a JDK home dir
+#
+# Optional ENV vars
+# -----------------
+#   MAVEN_OPTS - parameters passed to the Java VM when running Maven
+#     e.g. to debug Maven itself, use
+#       set MAVEN_OPTS=-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=y,address=8000
+#   MAVEN_SKIP_RC - flag to disable loading of mavenrc files
+# ----------------------------------------------------------------------------
+
+if [ -z "$MAVEN_SKIP_RC" ]; then
+  if [ -f /usr/local/etc/mavenrc ]; then
+    . /usr/local/etc/mavenrc
+  fi
+  if [ -f /etc/mavenrc ]; then
+    . /etc/mavenrc
+  fi
+  if [ -f "$HOME/.mavenrc" ]; then
+    . "$HOME/.mavenrc"
+  fi
+fi
+
+# OS specific support.  $var _must_ be set to either true or false.
+cygwin=false;
+darwin=false;
+mingw=false
+case "$(uname)" in
+  CYGWIN*) cygwin=true ;;
+  MINGW*) mingw=true;;
+  Darwin*) darwin=true
+    if [ -z "$JAVA_VERSION" ] && [ -z "$JAVA_HOME" ]; then
+      if [ -x '/usr/libexec/java_home' ]; then
+        export JAVA_HOME=$(java_home)
+      fi
+    fi
+    ;;
+esac
+
+if [ -z "$JAVA_HOME" ]; then
+  if $darwin; then
+    JAVA_HOME=$(/usr/libexec/java_home 2>/dev/null || echo "")
+  fi
+  if [ -z "$JAVA_HOME" ]; then
+    if [ -x "/usr/bin/java" ]; then
+      JAVA_HOME="$(dirname $(dirname $(readlink -f /usr/bin/java)))"
+    fi
+  fi
+fi
+
+if [ -z "$JAVA_HOME" ]; then
+  echo "Error: JAVA_HOME is not set."
+  exit 1
+fi
+
+JAVA_CMD="$JAVA_HOME/bin/java"
+
+if [ ! -x "$JAVA_CMD" ]; then
+  echo "Error: JAVA_HOME is set to an invalid directory ($JAVA_HOME)."
+  exit 1
+fi
+
+# traverses directory structure from process work directory to filesystem root,
+# first directory with .mvn subdirectory is considered project base directory
+find_maven_basedir() {
+  local basedir=$(pwd)
+  while [ "$basedir" != "/" ]; do
+    if [ -d "$basedir/.mvn" ]; then
+      echo "$basedir"
+      return
+    fi
+    basedir=$(dirname "$basedir")
+  done
+  echo "$(pwd)"
+}
+
+# concatenates all arguments
+concat_lines() {
+  if [ -f "$1" ]; then
+    echo "$(tr -s '\n' ' ' < "$1")"
+  fi
+}
+
+BASE_DIR=$(find_maven_basedir)
+MAVEN_PROJECTBASEDIR="${MAVEN_BASEDIR:-$BASE_DIR}"
+MAVEN_OPTS="$(concat_lines "$MAVEN_PROJECTBASEDIR/.mvn/jvm.config") $MAVEN_OPTS"
+
+# For Cygwin, switch paths to Windows format before running java
+if $cygwin; then
+  MAVEN_PROJECTBASEDIR=$(cygpath --path --mixed "$MAVEN_PROJECTBASEDIR")
+fi
+
+WRAPPER_LAUNCHER="org.apache.maven.wrapper.MavenWrapperMain"
+
+WRAPPER_JAR="$MAVEN_PROJECTBASEDIR/.mvn/wrapper/maven-wrapper.jar"
+WRAPPER_PROPERTIES="$MAVEN_PROJECTBASEDIR/.mvn/wrapper/maven-wrapper.properties"
+
+DOWNLOAD_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.3.2/maven-wrapper-3.3.2.jar"
+
+if [ -r "$WRAPPER_PROPERTIES" ] ; then
+  for p in $(grep -E '^(wrapperUrl)' "$WRAPPER_PROPERTIES" | sed 's/wrapperUrl=//'); do
+    DOWNLOAD_URL="$p"
+  done
+fi
+
+if [ -r "$WRAPPER_JAR" ]; then
+    if [ "$MVNW_VERBOSE" = true ]; then
+      echo "Found $WRAPPER_JAR"
+    fi
+else
+    if [ "$MVNW_VERBOSE" = true ]; then
+        echo "Couldn't find $WRAPPER_JAR, downloading it ..."
+        echo "Downloading from: $DOWNLOAD_URL"
+    fi
+    if $cygwin; then
+        curl -o "$WRAPPER_JAR" "$DOWNLOAD_URL" -L 2>/dev/null
+    else
+        if command -v curl > /dev/null 2>&1; then
+            curl -o "$WRAPPER_JAR" "$DOWNLOAD_URL" -L 2>/dev/null
+        elif command -v wget > /dev/null 2>&1; then
+            wget -O "$WRAPPER_JAR" "$DOWNLOAD_URL" 2>/dev/null
+        else
+            "$JAVA_CMD" -classpath "" "-Dmaven.multiModuleProjectDirectory=${MAVEN_PROJECTBASEDIR}" \
+                "-Dmaven.home=${M2_HOME}" "-Dmaven.wrapper.jar=${WRAPPER_JAR}" \
+                "-Dmaven.wrapper.properties=${WRAPPER_PROPERTIES}" \
+                "-Dmaven.wrapper.download.url=${DOWNLOAD_URL}" \
+                org.apache.maven.wrapper.MavenWrapperDownloader "$@"
+        fi
+    fi
+fi
+
+MAVEN_OPTS_EXTRA=""
+if [ -f "$MAVEN_PROJECTBASEDIR/.mvn/maven.config" ]; then
+    MAVEN_OPTS_EXTRA=$(cat "$MAVEN_PROJECTBASEDIR/.mvn/maven.config")
+fi
+
+exec "$JAVA_CMD" \
+  $MAVEN_OPTS \
+  -classpath "$WRAPPER_JAR" \
+  "-Dmaven.multiModuleProjectDirectory=${MAVEN_PROJECTBASEDIR}" \
+  $WRAPPER_LAUNCHER "$MAVEN_OPTS_EXTRA" "$@"

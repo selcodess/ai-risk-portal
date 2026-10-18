@@ -1,0 +1,195 @@
+<div class="page">
+  <div class="heading-row">
+    <div>
+      <div class="eyebrow">RISK OPERATIONS / DASHBOARD</div>
+      <h1>Risk overview<span class="accent-dot">.</span></h1>
+      <p class="subtitle">Track decisions, coordinate reviews, and keep accountability with your team.</p>
+    </div>
+    @if (canCreate()) {
+      <button class="primary-button" type="button" (click)="showCreate.set(true)">
+        <span>＋</span> New risk
+      </button>
+    }
+  </div>
+
+  <section class="stats-grid" aria-label="Risk metrics">
+    <div class="stat-card">
+      <div class="stat-head"><span>Total risks</span><span class="stat-icon blue">▦</span></div>
+      <strong>{{ riskService.total() }}</strong>
+      <small>Across all business areas</small>
+    </div>
+    <div class="stat-card">
+      <div class="stat-head"><span>Awaiting review</span><span class="stat-icon amber">◷</span></div>
+      <strong>{{ riskService.awaitingReview() }}</strong>
+      <small>Human decision required</small>
+    </div>
+    <div class="stat-card">
+      <div class="stat-head"><span>High priority</span><span class="stat-icon red">!</span></div>
+      <strong>{{ riskService.highPriority() }}</strong>
+      <small>High and critical severity</small>
+    </div>
+    <div class="stat-card">
+      <div class="stat-head"><span>Approved</span><span class="stat-icon green">✓</span></div>
+      <strong>{{ riskService.approved() }}</strong>
+      <small>Reviewed by a person</small>
+    </div>
+  </section>
+
+  <div class="section-grid">
+    <section class="register" id="risk-register">
+      <div class="section-heading">
+        <div>
+          <h2>Risk register</h2>
+          <p>Review and manage identified business risks</p>
+        </div>
+        <span class="count-pill">{{ filteredRisks().length }} results</span>
+      </div>
+
+      <div class="toolbar">
+        <label class="search-wrap">
+          <span aria-hidden="true">⌕</span>
+          <input type="search" aria-label="Search risks" placeholder="Search risks, owner, or ID..." [ngModel]="search()" (ngModelChange)="search.set($event)" />
+        </label>
+        <select aria-label="Filter by status" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+          <option value="ALL">All statuses</option>
+          <option value="PENDING">Pending</option>
+          <option value="NEEDS_INFO">Needs info</option>
+          <option value="APPROVED">Approved</option>
+          <option value="REJECTED">Rejected</option>
+        </select>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>RISK</th>
+              <th>SEVERITY</th>
+              <th>STATUS</th>
+              <th>OWNER</th>
+              <th>ACTION</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (risk of filteredRisks(); track risk.id) {
+              <tr>
+                <td>
+                  <a [routerLink]="['/risks', risk.id]" class="risk-link">
+                    <div class="risk-title">{{ risk.title }}</div>
+                    <div class="risk-meta">#{{ risk.id }} · {{ risk.area }}</div>
+                  </a>
+                </td>
+                <td>
+                  <app-severity-badge [severity]="risk.severity"></app-severity-badge>
+                </td>
+                <td>
+                  <app-status-badge [status]="risk.status"></app-status-badge>
+                </td>
+                <td><span class="owner">{{ risk.owner }}</span></td>
+                <td>
+                  <div class="action-buttons">
+                    <a [routerLink]="['/risks', risk.id]" class="action-button detail-btn">View / Edit</a>
+                    @if (canCreate()) {
+                      @if (risk.status.toUpperCase() !== 'APPROVED') {
+                        <button class="action-button" type="button" (click)="setStatus(risk.id, 'APPROVED')">Approve</button>
+                      } @else {
+                        <button class="action-button subtle" type="button" (click)="setStatus(risk.id, 'PENDING')">Reopen</button>
+                      }
+                    }
+                  </div>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="5" class="empty-state">No risks match your filters.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="register-footer">
+        @if (riskService.isConnectedToBackend()) {
+          <span class="live-indicator">● Connected to Spring Boot Risk Service (H2 persistence)</span>
+        } @else {
+          <span class="local-indicator">○ Local offline storage active</span>
+        }
+      </div>
+    </section>
+
+    <aside class="right-column">
+      <section class="insight-card" id="ai-assistant">
+        <div class="insight-icon">✦</div>
+        <div class="small-label">RISKALIGN AI</div>
+        <h2>AI-assisted<br />risk decisions</h2>
+        <p>Integrates with Python RiskAlign AI service for completeness checking and explainable severity suggestions.</p>
+        <div class="feature"><span>✓</span> Completeness validation</div>
+        <div class="feature"><span>✓</span> Rule-based explainability</div>
+        <div class="feature"><span>✓</span> Human review & sign-off</div>
+        <a routerLink="/reports" class="coming-soon">View analytics report <span>↗</span></a>
+      </section>
+
+      <section class="process-card">
+        <div class="small-label">WORKFLOW</div>
+        <h3>How it works</h3>
+        <div class="step">
+          <span>01</span>
+          <div><strong>Record a risk</strong><small>Capture impact, area and owner</small></div>
+        </div>
+        <div class="step">
+          <span>02</span>
+          <div><strong>Review evidence</strong><small>Check details with AI decision package</small></div>
+        </div>
+        <div class="step">
+          <span>03</span>
+          <div><strong>Sign off decision</strong><small>Human expert provides written justification</small></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+
+@if (showCreate()) {
+  <div class="modal-backdrop" (click)="showCreate.set(false)">
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" (click)="$event.stopPropagation()">
+      <div class="modal-heading">
+        <div>
+          <div class="eyebrow">NEW RISK</div>
+          <h2 id="modal-title">Create a risk</h2>
+        </div>
+        <button class="close-button" type="button" (click)="showCreate.set(false)" aria-label="Close">×</button>
+      </div>
+      <form (ngSubmit)="addRisk()">
+        <label>Risk title 
+          <input name="title" [(ngModel)]="draft.title" required maxlength="120" placeholder="What could go wrong?" />
+        </label>
+        <label>Description
+          <textarea name="description" [(ngModel)]="draft.description" rows="3" placeholder="Context, systems affected, potential business impact..."></textarea>
+        </label>
+        <label>Business area 
+          <select name="area" [(ngModel)]="draft.area">
+            <option>Information Security</option>
+            <option>Operations</option>
+            <option>Compliance</option>
+            <option>Vendor Management</option>
+          </select>
+        </label>
+        <div class="modal-two">
+          <label>Severity 
+            <select name="severity" [(ngModel)]="draft.severity">
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+          </label>
+          <label>Risk owner 
+            <input name="owner" [(ngModel)]="draft.owner" required maxlength="60" placeholder="Full name" />
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button class="secondary-button" type="button" (click)="showCreate.set(false)">Cancel</button>
+          <button class="primary-button" type="submit">Create risk</button>
+        </div>
+      </form>
+    </section>
+  </div>
+}
